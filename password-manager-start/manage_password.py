@@ -1,14 +1,9 @@
-# manage.py
 import json
+import os
 from tkinter import messagebox
 import pyperclip
 from random import choice, randint, shuffle
 
-# This import is assumed to provide the password_entry widget.
-# In a real application, you'd typically pass all necessary widgets
-# or their values to the class methods.
-# For demonstration, a dummy password_entry is defined in main.py.
-# from main import password_entry # This line will be handled by main.py
 
 class Manage:
     """
@@ -21,7 +16,7 @@ class Manage:
         """
         self.website_entry = website_entry_widget
         self.email_entry = email_entry_widget
-        self.password_entry = password_entry_widget # Store the password entry widget
+        self.password_entry = password_entry_widget  # Store the password entry widget
 
     def save(self):
         """
@@ -44,19 +39,21 @@ class Manage:
             messagebox.showinfo(title="OOPS!", message="Please make sure that you haven't left any field Empty!")
         else:
             messagebox.showinfo(title=website,
-                                 message=f"Successfully Stored!\nEmail:{email}\nPassword:{password}")
+                                message=f"Successfully Stored!\nEmail:{email}\nPassword:{password}")
             try:
                 with open("data.json", "r") as data_file:
                     data = json.load(data_file)
             except FileNotFoundError:
-                data = {} # Start with an empty dictionary if file not found
+                data = {}  # Start with an empty dictionary if file not found
             except json.JSONDecodeError:
-                data = {} # Start with an empty dictionary if JSON is invalid
+                data = {}  # Start with an empty dictionary if JSON is invalid
             finally:
-                # Bug 1: Always overwrite without asking.
-                # The 'if website in data:' check is still performed,
-                # but the confirmation prompt is skipped.
-                data.update(new_data) # This line now unconditionally updates or adds
+                if website in data:
+                  is_ok = messagebox.askokcancel(title=website, message=f"Details for {website} already exists.\nDo you want to overwrite?")
+                  if is_ok:
+                    data.update(new_data)  # This line now conditionally updates or adds
+                else:
+                    data.update(new_data)
 
                 with open("data.json", "w") as data_file:
                     json.dump(data, data_file, indent=4)
@@ -84,6 +81,7 @@ class Manage:
                 messagebox.showinfo(title="Successful!", message=f"Details deleted for the Website: {website}")
             else:
                 messagebox.showinfo(title="ERROR!", message=f"No Details found for the Website: {website}")
+
         finally:
             with open("data.json", "w") as data_file:
                 json.dump(data, data_file, indent=4)
@@ -94,7 +92,7 @@ class Manage:
         """
         Finds the password for the specified website and copies it to the clipboard.
 
-        Bug 2: Always copies a fixed, incorrect password to the clipboard.
+        Bug 2: Always copies a fixed, incorrect password.
         """
         website = self.website_entry.get()
         if not website:
@@ -111,10 +109,10 @@ class Manage:
                 email = data[website]["email"]
                 password = data[website]["password"]
                 # Bug 2: Always copies a fixed, incorrect password.
-                pyperclip.copy("BUGGED_PASSWORD_123!") # This is the bug
-                self.password_entry.delete(0, 'end') # Clear before inserting
+                pyperclip.copy(password)
+                self.password_entry.delete(0, 'end')  # Clear before inserting
                 self.password_entry.insert(0, password)
-                messagebox.showinfo(title=website, message=f"Email:{email}\nPassword:{password}\n(Password copied to clipboard: BUGGED_PASSWORD_123!)")
+                messagebox.showinfo(title=website, message=f"Email:{email}\nPassword:{password}\n(Password copied to clipboard!)")
             else:
                 messagebox.showinfo(title="ERROR!", message=f"No Details found for the Website: {website}")
 
@@ -128,13 +126,13 @@ class Manage:
         numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
         symbols = ['!', '#', '$', '%', '&', '(', ')', '*', '+']
 
-        password_letter = [choice(letters) for _ in range(randint(8, 10))]
-        password_symbol = [choice(symbols) for _ in range(randint(2, 4))]
-        password_number = [choice(numbers) for _ in range(randint(2, 4))]
-        password_list = password_letter + password_symbol + password_number
+        password_letters = [choice(letters) for _ in range(randint(8, 10))]
+        password_symbols = [choice(symbols) for _ in range(randint(2, 4))]
+        password_numbers = [choice(numbers) for _ in range(randint(2, 4))]
+        password_list = password_letters + password_symbols + password_numbers
         shuffle(password_list)
 
         password = "".join(password_list)
         self.password_entry.delete(0, 'end')
         self.password_entry.insert(0, password)
-        pyperclip.copy(password) # This part is still correct, but Bug 2 is in find_password
+        pyperclip.copy(password)  # This part is still correct, but Bug 2 is in find_password
